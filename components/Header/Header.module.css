@@ -7,6 +7,7 @@
     background-color: white;
     border-bottom: 1px solid #e5e7eb;
     border-radius: 0.5rem 0.5rem 0 0;
+    width: 100%;
   }
   
   .pair {
@@ -33,3 +34,21 @@
     cursor: pointer;
   }
   
+  .profile_icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    align-items: center;
+  }
+  .next_icon {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    align-items: center;
+  }
+  .dashboar_link {
+    text-decoration: none;
+    color: black;
+    display: flex;
+    align-items: center;
+  }

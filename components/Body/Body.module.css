@@ -139,3 +139,84 @@
     cursor: pointer;
     border: none;
   }
+
+  .title {
+    font-weight: 600;
+    font-size: 1.25rem;
+    padding-left: 0.5rem;
+  }
+
+  .description {
+    font-size: 0.875rem;
+    color: #6b7280;
+    padding-left: 0.5rem;
+  }
+
+  .active_users_header {
+    font-weight: 600;
+    font-size: 1rem;
+    padding-left: 0.5rem;
+  }
+
+  .active_user_container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    background-color: black;
+    width: 75%;
+    margin: auto;
+    border-radius: 10px;
+    color: white;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+
+  .active_users_icon {
+    width: 0.75rem;
+    height: 0.75rem;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    justify-content: center;
+  }
+
+  .input {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    max-width: 60%;
+    min-width: 300px;
+  }
+
+  .email {
+    display: flex;
+    gap: 0.5rem;
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .loginContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    justify-content: center;
+  }
+
+  .loginButton {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    background-color: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    cursor: pointer;
+  }
