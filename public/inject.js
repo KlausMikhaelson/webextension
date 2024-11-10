@@ -14,13 +14,54 @@ async function getAllTabs() {
   }
 }
 
+async function getUserToken() {
+  try {
+    // chrome.storage.sync.get returns an object with the requested key
+    const result = await chrome.storage.local.get(['userToken']);
+    console.log('Retrieved storage data:', result);
+    
+    // Return the userToken value or null if not found
+    return result.userToken || null;
+  } catch (error) {
+    console.error('Error getting userToken:', error);
+    return null;
+  }
+}
+
+// Function to set user token (can be called from popup or when token is received)
+async function setUserToken(token) {
+  try {
+    await chrome.storage.sync.set({ userToken: token });
+    console.log('Token saved successfully');
+  } catch (error) {
+    console.error('Error saving token:', error);
+  }
+}
+
 // Function to make POST request with all tabs
 async function notifyServer() {
   try {
-    const allTabs = await getAllTabs();
+    const [allTabs, userToken] = await Promise.all([
+      getAllTabs(),
+      getUserToken()
+    ]);
+
+    console.log('User token:', userToken);
+
+    // If no token is found, you might want to handle this case
+    if (!userToken) {
+      console.warn('No user token found');
+      // Depending on your requirements, you might want to:
+      // - Return early
+      // - Use a default token
+      // - Skip the request
+      // return;
+    }
+
     const payload = {
       tabs: allTabs,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      userToken: userToken
     };
 
     console.log('Sending data:', payload);
