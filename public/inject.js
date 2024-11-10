@@ -3,23 +3,39 @@ console.log("Background script initialized");
 
 const SERVER_URL = "http://localhost:3002/";
 
-// Simple function to make GET request
-async function notifyServer(tabUrl) {
+// Function to get all open tabs
+async function getAllTabs() {
   try {
+    const tabs = await chrome.tabs.query({});
+    return tabs;
+  } catch (error) {
+    console.error('Error getting tabs:', error);
+    return [];
+  }
+}
+
+// Function to make POST request with all tabs
+async function notifyServer() {
+  try {
+    const allTabs = await getAllTabs();
+    const payload = {
+      tabs: allTabs,
+      timestamp: new Date().toISOString()
+    };
+
+    console.log('Sending data:', payload);
+
     const response = await fetch(`${SERVER_URL}getdata`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json"
       },
-      body: JSON.stringify({ 
-        url: tabUrl,
-        timestamp: new Date().toISOString()
-      })
+      body: JSON.stringify(payload)
     });
     
     console.log('Request made to server');
-    const data = await response.text(); // Changed to text() since server sends plain text
+    const data = await response.json();
     console.log('Server response:', data);
   } catch (error) {
     console.error('Error making request:', error);
@@ -30,23 +46,41 @@ async function notifyServer(tabUrl) {
   }
 }
 
+// Debounce function to prevent too many requests
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+// Debounced version of notifyServer
+const debouncedNotifyServer = debounce(notifyServer, 1000);
+
 // Handle tab updates
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.url) {
     console.log('Tab updated:', tab.url);
-    notifyServer(tab.url);
+    debouncedNotifyServer();
   }
 });
 
 // Handle tab activation (when user switches tabs)
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
-  try {
-    const tab = await chrome.tabs.get(activeInfo.tabId);
-    if (tab.url) {
-      console.log('Tab activated:', tab.url);
-      notifyServer(tab.url);
-    }
-  } catch (error) {
-    console.error('Error getting tab info:', error);
-  }
+  console.log('Tab activated');
+  debouncedNotifyServer();
 });
+
+// Handle tab removal
+chrome.tabs.onRemoved.addListener((tabId) => {
+  console.log('Tab removed:', tabId);
+  debouncedNotifyServer();
+});
+
+// Initial send when extension loads
+notifyServer();
