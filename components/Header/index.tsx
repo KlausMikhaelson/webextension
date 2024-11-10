@@ -5,6 +5,26 @@ import styles from "./Header.module.css";
 import NextIcon from "../../public/icons/next-svgrepo-com.svg";
 
 const Header: React.FC = () => {
+  const [modal, setModal] = React.useState(false);
+  const [userLoggedIn, setUserLoggedIn] = React.useState(false);
+
+  const handleModal = () => {
+    setModal(!modal);
+  }
+
+  const handleLogout = () => {
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      chrome.storage.local.remove("userToken", () => {
+        console.log("User token removed from local storage");
+        localStorage.removeItem("userToken");
+        alert("Logged out");
+        setUserLoggedIn(false);
+      });
+    } else {
+      alert("Chrome storage not found");
+    }
+  }
+
   return (
     <div className={styles.header}>
       <div className={styles.dashboar_link}>
@@ -29,7 +49,10 @@ const Header: React.FC = () => {
           </g>
         </svg>
       </div>
-      <div>
+      <div style={{
+        backgroundColor: "black",
+        cursor: "pointer"
+      }} onClick={handleModal}>
         <svg
           className={styles.profile_icon}
           viewBox="0 0 36 36"
@@ -89,6 +112,11 @@ const Header: React.FC = () => {
           </g>
         </svg>
       </div>
+      {modal && (
+        <div className={styles.modal}>
+         <button onClick={handleLogout}>Logout</button>
+        </div>
+      )}
     </div>
   );
 };

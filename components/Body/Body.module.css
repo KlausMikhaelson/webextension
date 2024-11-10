@@ -220,3 +220,57 @@
     border: 1px solid #e5e7eb;
     cursor: pointer;
   }
+
+  .tabsSection {
+    margin-top: 20px;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+  }
+  
+  .tabsHeader {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #333;
+  }
+  
+  .tabsList {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  .tabItem {
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    background-color: white;
+    transition: all 0.2s ease;
+  }
+  
+  .tabItem:hover {
+    background-color: #f8f8f8;
+  }
+  
+  .activeTab {
+    border-left: 3px solid #007bff;
+    background-color: #f8f9fa;
+  }
+  
+  .tabTitle {
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: #333;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .tabUrl {
+    color: #666;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }

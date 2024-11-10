@@ -10,6 +10,13 @@ import ActiveIcon from "../../public/icons/active_status.png";
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 import "react-quill/dist/quill.snow.css";
 
+interface Tab {
+  id: number;
+  url: string;
+  title: string;
+  active: boolean;
+}
+
 const Body: React.FC = () => {
   const [currentUrl, setCurrentUrl] = useState("Test");
   const [numberOfActiveUsers, setNumberOfActiveUsers] = useState(7);
@@ -17,6 +24,7 @@ const Body: React.FC = () => {
   const [userLoggedIn, setUserLoggedIn] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [openTabs, setOpenTabs] = useState<Tab[]>([]);
 
   const checkUserIsLoggedIn = async () => {
     return new Promise((resolve: any) => {
@@ -24,7 +32,7 @@ const Body: React.FC = () => {
         chrome.storage.local.get("userToken", (result) => {
           const userToken = result.userToken;
           if (userToken) {
-            console.log("User is logged in");
+            console.log("User is logged in", userToken);
             setUserLoggedIn(true);
           } else {
             setUserLoggedIn(false);
@@ -35,13 +43,14 @@ const Body: React.FC = () => {
   };
 
   const handleLogin = async () => {
-    // Mock login validation; replace with actual API call
-    if (email === "asd" && password === "asd") {
-      const userToken = "mockToken123"; // Replace with token from API response
+    if (email && password) {
+      const userToken = email;
       if (typeof chrome !== "undefined" && chrome.storage) {
         chrome.storage.local.set({ userToken }, () => {
-          console.log("User token saved to local storage");
-          alert("Success");
+          console.log("User token saved to Chrome storage");
+          localStorage.setItem("userToken", userToken);
+          console.log("User token saved to browser's localStorage");
+          alert("Login successful");
           setUserLoggedIn(true);
         });
       } else {
@@ -49,6 +58,21 @@ const Body: React.FC = () => {
       }
     } else {
       alert("Invalid credentials");
+    }
+  };
+
+  const getAllTabs = () => {
+    if (typeof chrome !== "undefined" && chrome.tabs) {
+      chrome.tabs.query({}, (tabs) => {
+        const tabList = tabs.map(tab => ({
+          id: tab.id || 0,
+          url: tab.url || "",
+          title: tab.title || "",
+          active: tab.active || false
+        }));
+        console.log("All open tabs:", tabList);
+        setOpenTabs(tabList);
+      });
     }
   };
 
@@ -60,6 +84,78 @@ const Body: React.FC = () => {
     };
 
     verifyUserLogin();
+    getAllTabs(); // Get initial list of tabs
+
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      console.log("Current tab:", tabs);
+      const currentTab = tabs[0];
+      if (currentTab) {
+        // @ts-ignore
+        setCurrentUrl(currentTab.url || "");
+      }
+    });
+
+    // Listen for tab updates
+    chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+      if (tab.active && changeInfo.url) {
+      chrome.storage.local.set({ [`EndTimeStamp-${changeInfo.url}`]: new Date().getTime() }, () => {
+        setCurrentUrl(changeInfo.url || "");
+      });
+      getAllTabs(); // Refresh tab list when any tab is updated
+    }});
+
+    // Listen for tab creation/removal
+    chrome.tabs.onCreated.addListener(() => getAllTabs());
+    chrome.tabs.onRemoved.addListener(() => getAllTabs());
+
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      if (request.message === "activeUsers") {
+        console.log("Active users", request.data);
+        setNumberOfActiveUsers(request.data);
+      }
+    });
+
+    chrome.runtime.sendMessage({ message: "getActiveUsers" }, (response) => {
+      setNumberOfActiveUsers(response.data);
+    });
+
+    chrome.runtime.sendMessage({ message: "checkChatExists" }, (response) => {
+      setChatExists(response.data);
+    });
+
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      if (request.message === "chatExists") {
+        setChatExists(request.data);
+      }
+    });
+
+    return () => {
+      chrome.runtime.onMessage.removeListener((request, sender, sendResponse) => {
+        if (request.message === "activeUsers") {
+          setNumberOfActiveUsers(request.data);
+        }
+      });
+
+      chrome.runtime.onMessage.removeListener((request, sender, sendResponse) => {
+        if (request.message === "chatExists") {
+          setChatExists(request.data);
+        }
+      });
+    };
+  }, []);
+
+  useEffect(() => {
+    const getCurrentTabsTimeStamps = async () => {
+      const allTabs = await getAllTabs();
+      // if (allTabs) return;
+      // @ts-ignore
+      allTabs.forEach(async (tab) => {
+        const timeStamp = await chrome.storage.local.get(`EndTimeStamp-${tab.url}`);
+        console.log(`End Time Stamp for ${tab.url}:`, timeStamp);
+      });
+    }
+
+    getCurrentTabsTimeStamps();
   }, []);
 
   return (
@@ -67,24 +163,42 @@ const Body: React.FC = () => {
       <p className={styles.title}>{currentUrl}</p>
       <p className={styles.description}>Some Meta Data.....</p>
       {userLoggedIn ? (
-        <div className={styles.buttons}>
-          <div className={styles.active_user_container}>
-            <h3 className={styles.active_users_header}>
-              {numberOfActiveUsers}
-            </h3>
-            <p className={styles.active_users_text}>Active Users</p>
-            <img
-              className={styles.active_users_icon}
-              src={ActiveIcon.src}
-              alt="Active Users"
-            />
+        <div>
+          <div className={styles.buttons}>
+            <div className={styles.active_user_container}>
+              <h3 className={styles.active_users_header}>
+                {numberOfActiveUsers}
+              </h3>
+              <p className={styles.active_users_text}>Active Users</p>
+              <img
+                className={styles.active_users_icon}
+                src={ActiveIcon.src}
+                alt="Active Users"
+              />
+            </div>
+            <div className={styles.active_user_container}>
+              {chatExists ? (
+                <h3 className={styles.active_users_header}>Go to Chat</h3>
+              ) : (
+                <h3 className={styles.active_users_header}>Create Chat</h3>
+              )}
+            </div>
           </div>
-          <div className={styles.active_user_container}>
-            {chatExists ? (
-              <h3 className={styles.active_users_header}>Go to Chat</h3>
-            ) : (
-              <h3 className={styles.active_users_header}>Create Chat</h3>
-            )}
+          
+          {/* Open Tabs Section */}
+          <div className={styles.tabsSection}>
+            <h3 className={styles.tabsHeader}>Open Tabs ({openTabs.length})</h3>
+            <div className={styles.tabsList}>
+              {openTabs.map((tab) => (
+                <div 
+                  key={tab.id} 
+                  className={`${styles.tabItem} ${tab.active ? styles.activeTab : ''}`}
+                >
+                  <p className={styles.tabTitle}>{tab.title}</p>
+                  <p className={styles.tabUrl}>{tab.url}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       ) : (

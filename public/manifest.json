@@ -10,7 +10,7 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": ["storage"],
+  "permissions": ["storage", "tabs", "activeTab"],
   "web_accessible_resources": [
     {
       "resources": ["index.html"],
