@@ -15,42 +15,46 @@ const Body: React.FC = () => {
   const [numberOfActiveUsers, setNumberOfActiveUsers] = useState(7);
   const [chatExists, setChatExists] = useState(false);
   const [userLoggedIn, setUserLoggedIn] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const checkUserIsLoggedIn = async () => {
-    const userToken = localStorage.getItem("userToken");
+    return new Promise((resolve: any) => {
+      if (typeof chrome !== "undefined" && chrome.storage) {
+        chrome.storage.local.get("userToken", (result) => {
+          const userToken = result.userToken;
+          if (userToken) {
+            console.log("User is logged in");
+            setUserLoggedIn(true);
+          } else {
+            setUserLoggedIn(false);
+          }
+        });
+      }
+    });
+  };
 
-    if (userToken) {
-      console.log("User is logged in");
-      return true;
+  const handleLogin = async () => {
+    // Mock login validation; replace with actual API call
+    if (email === "asd" && password === "asd") {
+      const userToken = "mockToken123"; // Replace with token from API response
+      if (typeof chrome !== "undefined" && chrome.storage) {
+        chrome.storage.local.set({ userToken }, () => {
+          console.log("User token saved to local storage");
+          alert("Success");
+          setUserLoggedIn(true);
+        });
+      } else {
+        alert("Chrome storage not found");
+      }
+    } else {
+      alert("Invalid credentials");
     }
-
-    return false;
-
-    // const userProfile = await fetch("http://localhost:3000/api/user", {
-    //   method: "GET",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //     Authorization: `Bearer ${userToken}`,
-    //   },
-    // });
-
-    // if (userProfile.status === 200) {
-    //   return true;
-    // }
   };
 
   useEffect(() => {
-    // Get current tab information when popup opens
-    // @ts-ignore
-    // chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    //   if (tabs[0]) {
-    //     // only get the domain name
-    //     setCurrentUrl(new URL(tabs[0].url).hostname);
-    //   }
-    // });
-
     const verifyUserLogin = async () => {
-      const isLoggedIn = await checkUserIsLoggedIn();
+      const isLoggedIn: any = await checkUserIsLoggedIn();
       setUserLoggedIn(isLoggedIn);
       console.log(`User is ${isLoggedIn ? "logged in" : "not logged in"}`);
     };
@@ -85,8 +89,7 @@ const Body: React.FC = () => {
         </div>
       ) : (
         <div
-          // @ts-ignore
-          className={{
+          style={{
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
@@ -100,6 +103,8 @@ const Body: React.FC = () => {
                 type="text"
                 placeholder="Enter your name"
                 className={styles.input}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div className={styles.email}>
@@ -108,9 +113,13 @@ const Body: React.FC = () => {
                 type="password"
                 placeholder="Password"
                 className={styles.input}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <button className={styles.loginButton}>Login</button>
+            <button className={styles.loginButton} onClick={handleLogin}>
+              Login
+            </button>
           </div>
         </div>
       )}
