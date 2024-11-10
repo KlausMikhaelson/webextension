@@ -1,71 +1,52 @@
-console.log("Calling the background script");
+// Background script for tab tracking
+console.log("Background script initialized");
 
-let currentTab = null;
-let startTime = null;
+const SERVER_URL = "http://localhost:3002/";
 
-// Function to send data to your server
-async function sendDataToServer(data) {
+// Simple function to make GET request
+async function notifyServer(tabUrl) {
   try {
-    const response = await fetch("YOUR_SERVER_URL/api/tracking", {
+    const response = await fetch(`${SERVER_URL}getdata`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Accept": "application/json"
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ 
+        url: tabUrl,
+        timestamp: new Date().toISOString()
+      })
     });
-    return await response.json();
+    
+    console.log('Request made to server');
+    const data = await response.text(); // Changed to text() since server sends plain text
+    console.log('Server response:', data);
   } catch (error) {
-    console.error("Error sending data:", error);
-  }
-}
-
-// Function to handle tab changes
-function handleTabChange(tabId, changeInfo, tab) {
-  if (changeInfo.status === "complete" && tab.active) {
-    // If there was a previous tab, send its end time
-    if (currentTab && startTime) {
-      const endTime = new Date().toISOString();
-      sendDataToServer({
-        url: currentTab.url,
-        startTime: startTime,
-        endTime: endTime,
-        tabId: currentTab.id,
-      });
-    }
-
-    // Update current tab and start time
-    currentTab = tab;
-    startTime = new Date().toISOString();
-
-    // Send initial visit data
-    sendDataToServer({
-      url: tab.url,
-      startTime: startTime,
-      tabId: tab.id,
-      type: "visit",
+    console.error('Error making request:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack
     });
   }
 }
 
-// Listen for tab updates
-chrome.tabs.onUpdated.addListener(handleTabChange);
-
-// Listen for tab activation changes
-chrome.tabs.onActivated.addListener(async (activeInfo) => {
-  const tab = await chrome.tabs.get(activeInfo.tabId);
-  handleTabChange(activeInfo.tabId, { status: "complete" }, tab);
+// Handle tab updates
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' && tab.url) {
+    console.log('Tab updated:', tab.url);
+    notifyServer(tab.url);
+  }
 });
 
-// Handle when browser closes or tab closes
-chrome.windows.onRemoved.addListener(() => {
-  if (currentTab && startTime) {
-    const endTime = new Date().toISOString();
-    sendDataToServer({
-      url: currentTab.url,
-      startTime: startTime,
-      endTime: endTime,
-      tabId: currentTab.id,
-      type: "exit",
-    });
+// Handle tab activation (when user switches tabs)
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  try {
+    const tab = await chrome.tabs.get(activeInfo.tabId);
+    if (tab.url) {
+      console.log('Tab activated:', tab.url);
+      notifyServer(tab.url);
+    }
+  } catch (error) {
+    console.error('Error getting tab info:', error);
   }
 });
