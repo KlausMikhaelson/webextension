@@ -68,9 +68,11 @@ const Body: React.FC = () => {
           id: tab.id || 0,
           url: tab.url || "",
           title: tab.title || "",
-          active: tab.active || false
+          active: tab.active || false,
+          ...tab
         }));
         console.log("All open tabs:", tabList);
+    // TODO: send the data to the server
         setOpenTabs(tabList);
       });
     }
@@ -158,6 +160,17 @@ const Body: React.FC = () => {
     getCurrentTabsTimeStamps();
   }, []);
 
+  const convertEpochToReadableTime = (epochTime) => {
+    // Check if the epoch time is in milliseconds and convert to seconds if needed
+    const isMilliseconds = epochTime > 9999999999;
+    const date = new Date(isMilliseconds ? epochTime : epochTime * 1000);
+  
+    // Format the date and time as a human-readable string
+    const readableTime = date.toLocaleString();
+  
+    return readableTime;
+  };
+
   return (
     <div className="p-4">
       <p className={styles.title}>{currentUrl}</p>
@@ -196,6 +209,10 @@ const Body: React.FC = () => {
                 >
                   <p className={styles.tabTitle}>{tab.title}</p>
                   <p className={styles.tabUrl}>{tab.url}</p>
+                  {/* @ts-ignore */}
+                  <p className={styles.tabUrl}>{convertEpochToReadableTime(tab.lastAccessed)}</p>
+                  {/* @ts-ignore */}
+                  <img src={tab.favIconUrl} alt="Favicon" className={styles.favicon} />
                 </div>
               ))}
             </div>

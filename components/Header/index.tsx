@@ -50,7 +50,6 @@ const Header: React.FC = () => {
         </svg>
       </div>
       <div style={{
-        backgroundColor: "black",
         cursor: "pointer"
       }} onClick={handleModal}>
         <svg
